@@ -1,0 +1,43 @@
+services:
+  app:
+    image: phonebook-front
+    build:
+      context: ./phonebook-frontend
+      dockerfile: Dockerfile
+    container_name: phonebook-front
+
+  backend:
+    image: phonebook-backend
+    build:
+      context: ./phonebook-backend
+      dockerfile: Dockerfile
+    environment:
+      - PORT=3001
+      - MONGO_URL=mongodb://the_username:the_password@mongo:27017/phonebook
+    container_name: phonebook-backend
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+      MONGO_INITDB_DATABASE: phonebook
+    volumes:
+      - ./phonebook-backend/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+      - mongo_data:/data/db
+
+  nginx:
+    image: nginx:1.29-alpine
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - 8080:80
+    container_name: phonebook-proxy
+    depends_on:
+      - app
+      - backend
+
+volumes:
+  mongo_data:
